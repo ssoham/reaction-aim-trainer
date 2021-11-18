@@ -14,3 +14,9 @@ The final project will be two-part with one final application. The first part of
 
 ## Possible Challenges
 There are quite a few challenges that could pop up, such as being unable to properly read pixel values. Another issue we could run into would be making an entire GUI based application (and possibly converting this to an executable file), as we haven't done any visual FX work in Rust. A third challenge could arise from the `quicksilver` framework; though it did look promising, we hadn't looked much into it so the features could be limiting in which case other alternatives for GUI applications would need to be found.
+
+### Required Packages
+```
+apt install libudev-dev
+apt install pkg-config
+```
