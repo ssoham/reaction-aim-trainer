@@ -7,7 +7,7 @@ use quicksilver::{
 
 use std:: {io, thread, time};
 use rand::Rng;
-
+use std::sync::mpsc;
 
 fn main() {
 
@@ -15,7 +15,7 @@ fn main() {
     println!("welcome to the reaction & aim tester!");
     println!("Enter [R]eaction if you would like to test your reaction or [A] if you would like to test your aim.");
     let mut input = String::new();
-    io::stdin().read_line(&mut input);
+    io::stdin().read_line(&mut input).ok();
     let input = input.trim();  
 
     // TODO: check first first letter of input string (convert to lowercase)
@@ -51,45 +51,81 @@ async fn reaction_time(window: Window, mut gfx: Graphics, mut input: Input) -> R
 
     gfx.clear(Color::WHITE);
     gfx.present(&window)?;
-    let ttf = VectorFont::load("../static/Exo2.ttf").await?;
-    let mut font = ttf.to_renderer(&gfx, 40.0)?;
-    let sleep_time = rand::thread_rng().gen_range(0..5) + 3;
-    thread::sleep(time::Duration::from_secs(sleep_time));
+    // let ttf = VectorFont::load("../static/Exo2.ttf").await?;
+    // let mut font = ttf.to_renderer(&gfx, 40.0)?;
+    // let sleep_time = rand::thread_rng().gen_range(0..5) + 3;
+    let (send, receiver) = mpsc::channel();
+    let timer = thread::spawn(move || {
+        let sleep_time = rand::thread_rng().gen_range(0..5) + 3;
+        thread::sleep(time::Duration::from_secs(sleep_time));
+        send.send(true).unwrap();
+    });
+    // thread::sleep(time::Duration::from_millis(4000));
     gfx.clear(Color::GREEN);
     gfx.present(&window)?;
     let start_time = time::SystemTime::now();
 
-
-    // TODO: add functionality to break when user wants to break
-    let mut running  = true;
+    let mut running = true;
     while running {
         while let Some(event) = input.next_event().await {
             match event {
-                Event::KeyboardInput(key) if key.is_down() => {
-                    if key.key() == Key::Return {
-                        let end_time = time::SystemTime::now();
-                        let duration = end_time.duration_since(start_time).unwrap();
-                        let duration_ms = duration.as_secs() * 1000 + duration.subsec_nanos() as u64 / 1_000_000;
-                        gfx.clear(Color::WHITE);
-                        font.draw(
-                            &mut gfx,
-                            &format!("You took {} milliseconds", duration_ms),
-                            Color::BLACK,
-                            Vector::new(50.0, 50.0),
-                        )?;
-                        gfx.present(&window)?;
-                        thread::sleep(time::Duration::from_secs(2));
-                        println!("you took {} milliseconds", duration_ms);
+                Event::KeyboardInput(key) => {
+                    if key.key() == Key::Space {
                         running = false;
+                        print!("yes");
                     }
                 }
                 _ => {}
             }
         }
     }
-    
 
     Ok(())
+    // Ok(while let Some(e) = input.next_event().await {
+    //     match e {
+    //         Event::KeyboardInput(key) if key.is_down() => {
+    //             if key.key() == Key::Space {
+    //                 let end_time = time::SystemTime::now();
+    //                 let duration = end_time.duration_since(start_time).unwrap();
+    //                 let duration_ms = duration.as_millis();
+    //                 println!("Your reaction time was {} milliseconds", duration_ms);
+    //                 return Ok(());
+    //             }
+    //         }
+    //         _ => {}
+    //     }
+    // })
+
+    // TODO: add functionality to break when user wants to break
+    // let mut running  = true;
+    // while running {
+    //     while let Some(event) = input.next_event().await {
+    //         match event {
+    //             Event::KeyboardInput(key) if key.is_down() => {
+    //                 if key.key() == Key::Return {
+    //                     let end_time = time::SystemTime::now();
+    //                     let duration = end_time.duration_since(start_time).unwrap();
+    //                     let duration_ms = duration.as_secs() * 1000 + duration.subsec_nanos() as u64 / 1_000_000;
+    //                     gfx.clear(Color::WHITE);
+    //                     font.draw(
+    //                         &mut gfx,
+    //                         &format!("You took {} milliseconds", duration_ms),
+    //                         Color::BLACK,
+    //                         Vector::new(50.0, 50.0),
+    //                     )?;
+    //                     gfx.present(&window)?;
+    //                     thread::sleep(time::Duration::from_secs(2));
+    //                     println!("you took {} milliseconds", duration_ms);
+    //                     running = false;
+    //                 }
+    //             }
+    //             _ => {}
+    //         }
+    //     }
+    // }
+    
+
+    // Ok(())
 }
 
 async fn aim_trainer(window: Window, mut gfx: Graphics, mut input: Input) -> Result<()> {
@@ -98,7 +134,7 @@ async fn aim_trainer(window: Window, mut gfx: Graphics, mut input: Input) -> Res
     let mut count = 0;
     let mut average_time = 0.0;
     let mut start_time = time::SystemTime::now();
-    let mut end_time = time::SystemTime::now();
+    // let mut end_time = time::SystemTime::now();
     loop {
         while let Some(_) = input.next_event().await {}
         gfx.clear(Color::WHITE);
@@ -115,7 +151,7 @@ async fn aim_trainer(window: Window, mut gfx: Graphics, mut input: Input) -> Res
         if mouse.distance(rand_pos) < 10.0 {
             target_exists = false;
             gfx.fill_circle(&Circle::new(rand_pos, 20.0), Color::WHITE);
-            end_time = time::SystemTime::now();
+            let end_time = time::SystemTime::now();
             println!("{}", end_time.duration_since(start_time).unwrap().as_millis());
             average_time += end_time.duration_since(start_time).unwrap().as_millis() as f32;
         }
