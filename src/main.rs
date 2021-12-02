@@ -20,18 +20,25 @@ lazy_static! {
 
 fn main() {
     // TODO: GET GUI with options working
-    // run (
-    //     Settings {
-    //         title: "Reaction & Aim Trainer",
-    //         size: Vector{x: 800.0, y: 600.0},
-    //         resizable: false,
-    //         ..Settings::default()
-    //     },
-    //     home,
-    // );
-    
-    // let reaction_b = REACTION.read().unwrap();
-    // if *reaction_b {
+    run (
+        Settings {
+            title: "Reaction & Aim Trainer",
+            size: Vector{x: 800.0, y: 600.0},
+            resizable: false,
+            ..Settings::default()
+        },
+        home,
+    );
+
+
+    // println!("welcome to the reaction & aim tester!");
+    // println!("Enter [R]eaction if you would like to test your reaction or [A] if you would like to test your aim.");
+    // let mut input = String::new();
+    // io::stdin().read_line(&mut input).ok();
+    // let input = input.trim();
+
+    // if input == "r" {
+    //     println!("You have chosen to test your reaction time!");
     //     run(
     //         Settings {
     //             size: Vector { x: 800.0, y: 600.0 },
@@ -40,39 +47,20 @@ fn main() {
     //         },
     //         reaction_time,
     //     );
+    // } else if input == "a" {
+    //     println!("You have chosen to test your aim!");
+    //     run(
+    //         Settings {
+    //             size: Vector { x: 800.0, y: 600.0 },
+    //             title: "Aim trainer",
+    //             ..Settings::default()
+    //         },
+    //         aim_trainer,
+    //     );
+    // } else {
+    //     println!("You have entered an invalid input. Please try again.");
+    //     main();
     // }
-
-
-    println!("welcome to the reaction & aim tester!");
-    println!("Enter [R]eaction if you would like to test your reaction or [A] if you would like to test your aim.");
-    let mut input = String::new();
-    io::stdin().read_line(&mut input).ok();
-    let input = input.trim();
-
-    if input == "r" {
-        println!("You have chosen to test your reaction time!");
-        run(
-            Settings {
-                size: Vector { x: 800.0, y: 600.0 },
-                title: "Reaction Timer",
-                ..Settings::default()
-            },
-            reaction_time,
-        );
-    } else if input == "a" {
-        println!("You have chosen to test your aim!");
-        run(
-            Settings {
-                size: Vector { x: 800.0, y: 600.0 },
-                title: "Aim trainer",
-                ..Settings::default()
-            },
-            aim_trainer,
-        );
-    } else {
-        println!("You have entered an invalid input. Please try again.");
-        main();
-    }
 }
 
 async fn home(window: Window, mut gfx: Graphics, mut input: Input) -> Result<()> {
@@ -103,17 +91,25 @@ async fn home(window: Window, mut gfx: Graphics, mut input: Input) -> Result<()>
                         running = false;
                         let mut reaction_bool = REACTION.write().unwrap();
                         *reaction_bool = true;
+                        break;
                     }
                     if key.key() == Key::A {
                         println!("You have chosen to test your aim!");
                         running = false;
                         let mut aim_bool = AIM.write().unwrap();
                         *aim_bool = false;
+                        break;
                     }
                 }
                 _ => {}
             }
         }
+    }
+
+    if *REACTION.read().unwrap() {
+        reaction_time(window, gfx, input).await?;
+    } else if *AIM.read().unwrap() {
+        aim_trainer(window, gfx, input).await?;
     }
 
     Ok(())
