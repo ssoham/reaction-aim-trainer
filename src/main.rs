@@ -7,7 +7,6 @@ use quicksilver::{
 
 use rand::Rng;
 use lazy_static::lazy_static;
-
 use std::sync::mpsc;
 use std::sync::RwLock;
 use std::{thread, time};
@@ -16,10 +15,10 @@ use std::{thread, time};
 lazy_static! {
     static ref REACTION: RwLock<bool> = RwLock::new(false);
     static ref AIM: RwLock<bool> = RwLock::new(false);
+    static ref CONTINUE: RwLock<bool> = RwLock::new(true);
 }
 
 fn main() {
-    // TODO: GET GUI with options working
     run (
         Settings {
             title: "Reaction & Aim Trainer",
@@ -64,76 +63,87 @@ fn main() {
 }
 
 async fn home(window: Window, mut gfx: Graphics, mut input: Input) -> Result<()> {
-    gfx.clear(Color::WHITE);
-    gfx.present(&window)?;
-    let ttf = VectorFont::load("../static/Exo2.ttf").await.unwrap();
-    let mut font = ttf.to_renderer(&gfx, 32.0)?;
+    // while *CONTINUE.read().unwrap() {
 
-    font.draw_wrapping(
-        &mut gfx,
-        "Welcome to the reaction & aim tester!",
-        Some(500.0),
-        Color::BLACK,
-        Vector::new(100.0, 300.0),
-    )?;
-    gfx.present(&window)?;
+    // }
+    
+    // let mut running = true;
+    while *CONTINUE.read().unwrap() {
+        gfx.clear(Color::WHITE);
+        // gfx.present(&window)?;
+        let ttf = VectorFont::load("../static/Exo2.ttf").await.unwrap();
+        // let w = &window;
+        let mut font = ttf.to_renderer(&gfx, 32.0)?;
+    
+        font.draw_wrapping(
+            &mut gfx,
+            "Welcome to the reaction & aim tester!",
+            Some(500.0),
+            Color::BLACK,
+            Vector::new(100.0, 300.0),
+        )?;
 
-    let mut running = true;
-    while running {
+        gfx.present(&window)?;
+        thread::sleep(time::Duration::from_millis(2000));
+
         while let Some(event) = input.next_event().await {
             match event {
                 Event::KeyboardInput(key) => {
                     if key.key() == Key::Escape {
-                        running = false;
+                        *CONTINUE.write().unwrap() = false;
+                        // running = false;
                     }
                     if key.key() == Key::R {
                         println!("You have chosen to test your reaction time!");
-                        running = false;
+                        // running = false;
                         let mut reaction_bool = REACTION.write().unwrap();
                         *reaction_bool = true;
+                        reaction_time(&window, &mut gfx, &mut input).await?;
                         break;
                     }
                     if key.key() == Key::A {
                         println!("You have chosen to test your aim!");
-                        running = false;
+                        // running = false;
                         let mut aim_bool = AIM.write().unwrap();
-                        *aim_bool = false;
+                        *aim_bool = true;
+                        aim_trainer(&window, &mut gfx, &mut input).await?;
                         break;
                     }
                 }
                 _ => {}
             }
-        }
+        } 
     }
-
-    if *REACTION.read().unwrap() {
-        reaction_time(window, gfx, input).await?;
-    } else if *AIM.read().unwrap() {
-        aim_trainer(window, gfx, input).await?;
-    }
+    
+    // if *REACTION.read().unwrap() {
+    //     reaction_time(window, gfx, input).await?;
+    // } else if *AIM.read().unwrap() {
+    //     aim_trainer(window, gfx, input).await?;
+    // }
 
     Ok(())
 }
 
-async fn reaction_time(window: Window, mut gfx: Graphics, mut input: Input) -> Result<()> {
+// #[async_recursion]
+async fn reaction_time(window: &Window, gfx: &mut Graphics, input: &mut Input) -> Result<()> {
     gfx.clear(Color::WHITE);
     gfx.present(&window)?;
-    let ttf = VectorFont::load("../static/Exo2.ttf").await?;
+    let ttf = VectorFont::load("Exo2.ttf").await?;
     let mut font = ttf.to_renderer(&gfx, 40.0)?;
-
-    let (send, _recv) = mpsc::channel();
+    
+    // let (send, _recv) = mpsc::channel();
     let _timer = thread::spawn(move || {
         let sleep_time = rand::thread_rng().gen_range(0..5) + 10;
         thread::sleep(time::Duration::from_secs(sleep_time));
-        send.send(true).unwrap();
+        // send.send(true).unwrap();
     });
 
     gfx.clear(Color::GREEN);
     gfx.present(&window)?;
     let start_time = time::SystemTime::now();
-
+    
     let mut running = true;
-    Ok(while running {
+    while running {
         while let Some(event) = input.next_event().await {
             match event {
                 Event::KeyboardInput(key) => {
@@ -142,27 +152,32 @@ async fn reaction_time(window: Window, mut gfx: Graphics, mut input: Input) -> R
                         let end_time = time::SystemTime::now();
                         let duration = end_time.duration_since(start_time).unwrap();
                         let duration_ms = duration.as_millis();
-
+                        
                         gfx.clear(Color::WHITE);
+                        println!("Your reaction time was {}ms", duration_ms);
                         font.draw_wrapping(
-                            &mut gfx,
+                            gfx,
                             &format!("Your reaction time was {}ms", duration_ms),
                             Some(500.0),
                             Color::BLACK,
                             Vector::new(170.0, 300.0),
                         )?;
                         gfx.present(&window)?;
-
-                        thread::sleep(time::Duration::from_millis(5000));
+                        thread::sleep(time::Duration::from_secs(2));
                     }
                 }
                 _ => {}
             }
         }
-    })
+    }
+    
+    let mut c = CONTINUE.write().unwrap();
+    *c = true;
+    
+    Ok(())
 }
 
-async fn aim_trainer(window: Window, mut gfx: Graphics, mut input: Input) -> Result<()> {
+async fn aim_trainer(window: &Window, gfx: &mut Graphics, input: &mut Input) -> Result<()> {
     let mut rand_pos = Vector::new(0.0, 0.0);
     let mut target_exists = false;
     let mut count = 0;
