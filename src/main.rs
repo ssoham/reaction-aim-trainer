@@ -6,17 +6,9 @@ use quicksilver::{
 };
 
 use rand::Rng;
-use lazy_static::lazy_static;
 use std::sync::mpsc;
-use std::sync::RwLock;
 use std::{thread, time};
 
-
-lazy_static! {
-    static ref REACTION: RwLock<bool> = RwLock::new(false);
-    static ref AIM: RwLock<bool> = RwLock::new(false);
-    static ref CONTINUE: RwLock<bool> = RwLock::new(true);
-}
 
 fn main() {
     run (
@@ -31,14 +23,15 @@ fn main() {
 }
 
 async fn home(window: Window, mut gfx: Graphics, mut input: Input) -> Result<()> {
-    while *CONTINUE.read().unwrap() {
+    let mut running = true;
+    while running {
         gfx.clear(Color::WHITE);
         let ttf = VectorFont::load("../static/Exo2.ttf").await.unwrap();
         let mut font = ttf.to_renderer(&gfx, 32.0)?;
     
         font.draw_wrapping(
             &mut gfx,
-            "Welcome to the reaction & aim tester!",
+            "Welcome to the reaction & aim tester! \n Press [R] to test reaction time \n Press [A] to test aim time, and [ESC] to quit.",
             Some(500.0),
             Color::BLACK,
             Vector::new(100.0, 300.0),
@@ -51,22 +44,15 @@ async fn home(window: Window, mut gfx: Graphics, mut input: Input) -> Result<()>
             match event {
                 Event::KeyboardInput(key) => {
                     if key.key() == Key::Escape {
-                        *CONTINUE.write().unwrap() = false;
-                        // running = false;
+                        running = false;
                     }
                     if key.key() == Key::R {
                         println!("You have chosen to test your reaction time!");
-                        // running = false;
-                        let mut reaction_bool = REACTION.write().unwrap();
-                        *reaction_bool = true;
                         reaction_time(&window, &mut gfx, &mut input).await?;
                         break;
                     }
                     if key.key() == Key::A {
                         println!("You have chosen to test your aim!");
-                        // running = false;
-                        let mut aim_bool = AIM.write().unwrap();
-                        *aim_bool = true;
                         aim_trainer(&window, &mut gfx, &mut input).await?;
                         break;
                     }
@@ -78,17 +64,24 @@ async fn home(window: Window, mut gfx: Graphics, mut input: Input) -> Result<()>
     Ok(())
 }
 
-// #[async_recursion]
 async fn reaction_time(window: &Window, gfx: &mut Graphics, input: &mut Input) -> Result<()> {
     gfx.clear(Color::WHITE);
-    gfx.present(&window)?;
+
     let ttf = VectorFont::load("Exo2.ttf").await?;
     let mut font = ttf.to_renderer(&gfx, 40.0)?;
+    font.draw_wrapping(
+        gfx,
+        "Press [SPACE] when the screen turns green!",
+        Some(500.0),
+        Color::BLACK,
+        Vector::new(100.0, 300.0),
+    )?;
+    gfx.present(&window)?;
     
     let (send, _recv) = mpsc::channel();
     let _timer = thread::spawn(move || {
-        let sleep_time = rand::thread_rng().gen_range(0..5) + 10;
-        thread::sleep(time::Duration::from_secs(3));
+        let sleep_time = rand::thread_rng().gen_range(0..5) *2;
+        thread::sleep(time::Duration::from_secs(sleep_time));
         send.send(true).unwrap();
     });
 
@@ -124,10 +117,7 @@ async fn reaction_time(window: &Window, gfx: &mut Graphics, input: &mut Input) -
             }
         }
     }
-    
-    let mut c = CONTINUE.write().unwrap();
-    *c = true;
-    
+        
     Ok(())
 }
 
@@ -140,6 +130,7 @@ async fn aim_trainer(window: &Window, gfx: &mut Graphics, input: &mut Input) -> 
     let mut last_time = 0.0;
     let ttf = VectorFont::load("Exo2.ttf").await?;
     let mut font = ttf.to_renderer(&gfx, 40.0)?;
+    
     loop {
         while let Some(_) = input.next_event().await {}
         gfx.clear(Color::WHITE);
@@ -185,9 +176,7 @@ async fn aim_trainer(window: &Window, gfx: &mut Graphics, input: &mut Input) -> 
             
             average_time = average_time / 10.0;
             gfx.clear(Color::WHITE);
-            let curr_time = time::SystemTime::now();
-            let time_now = time::SystemTime::now();
-            let duration = time_now.duration_since(curr_time).unwrap();
+
             font.draw(
                 gfx,
                 &format!("Your average aim time was {}ms", average_time),
@@ -201,5 +190,6 @@ async fn aim_trainer(window: &Window, gfx: &mut Graphics, input: &mut Input) -> 
         }
         gfx.present(&window)?;
     }
+
     Ok(())
 }
