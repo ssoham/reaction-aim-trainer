@@ -17,6 +17,5 @@ There are quite a few challenges that could pop up, such as being unable to prop
 
 ### Required Packages
 ```
-apt install libudev-dev
-apt install pkg-config
+None!
 ```

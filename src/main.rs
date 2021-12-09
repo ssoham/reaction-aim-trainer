@@ -131,11 +131,11 @@ async fn reaction_time(window: &Window, gfx: &mut Graphics, input: &mut Input) -
     let ttf = VectorFont::load("Exo2.ttf").await?;
     let mut font = ttf.to_renderer(&gfx, 40.0)?;
     
-    // let (send, _recv) = mpsc::channel();
+    let (send, _recv) = mpsc::channel();
     let _timer = thread::spawn(move || {
         let sleep_time = rand::thread_rng().gen_range(0..5) + 10;
-        thread::sleep(time::Duration::from_secs(sleep_time));
-        // send.send(true).unwrap();
+        thread::sleep(time::Duration::from_secs(3));
+        send.send(true).unwrap();
     });
 
     gfx.clear(Color::GREEN);
@@ -183,7 +183,9 @@ async fn aim_trainer(window: &Window, gfx: &mut Graphics, input: &mut Input) -> 
     let mut count = 0;
     let mut average_time = 0.0;
     let mut start_time = time::SystemTime::now();
-
+    let mut last_time = 0.0;
+    let ttf = VectorFont::load("Exo2.ttf").await?;
+    let mut font = ttf.to_renderer(&gfx, 40.0)?;
     loop {
         while let Some(_) = input.next_event().await {}
         gfx.clear(Color::WHITE);
@@ -208,12 +210,39 @@ async fn aim_trainer(window: &Window, gfx: &mut Graphics, input: &mut Input) -> 
                 "{}",
                 end_time.duration_since(start_time).unwrap().as_millis()
             );
+            last_time = end_time.duration_since(start_time).unwrap().as_millis() as f32;
             average_time += end_time.duration_since(start_time).unwrap().as_millis() as f32;
+            font.draw(
+                gfx,
+                &format!("target hit in {}ms\naverage time is {}ms", last_time, average_time / (count as f32)),
+                Color::BLACK,
+                Vector::new(100.0, 100.0),
+            )?;
+            println!("{}", count);
         }
         gfx.fill_circle(&Circle::new(mouse, 20.0), Color::RED);
+        font.draw(
+            gfx,
+            &format!("target hit in {}ms\naverage time is {}ms", last_time, average_time / (count as f32)),
+            Color::BLACK,
+            Vector::new(100.0, 100.0),
+        )?;
         if count == 10 {
+            
             average_time = average_time / 10.0;
-            println!("Average reaction time: {} ms", average_time);
+            gfx.clear(Color::WHITE);
+            let curr_time = time::SystemTime::now();
+            let time_now = time::SystemTime::now();
+            let duration = time_now.duration_since(curr_time).unwrap();
+            font.draw(
+                gfx,
+                &format!("Your average aim time was {}ms", average_time),
+                Color::BLACK,
+                Vector::new(100.0, 100.0),
+            )?;
+            gfx.present(&window)?;
+
+            thread::sleep(time::Duration::from_secs(3));
             break;
         }
         gfx.present(&window)?;
