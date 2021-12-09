@@ -28,51 +28,12 @@ fn main() {
         },
         home,
     );
-
-
-    // println!("welcome to the reaction & aim tester!");
-    // println!("Enter [R]eaction if you would like to test your reaction or [A] if you would like to test your aim.");
-    // let mut input = String::new();
-    // io::stdin().read_line(&mut input).ok();
-    // let input = input.trim();
-
-    // if input == "r" {
-    //     println!("You have chosen to test your reaction time!");
-    //     run(
-    //         Settings {
-    //             size: Vector { x: 800.0, y: 600.0 },
-    //             title: "Reaction Timer",
-    //             ..Settings::default()
-    //         },
-    //         reaction_time,
-    //     );
-    // } else if input == "a" {
-    //     println!("You have chosen to test your aim!");
-    //     run(
-    //         Settings {
-    //             size: Vector { x: 800.0, y: 600.0 },
-    //             title: "Aim trainer",
-    //             ..Settings::default()
-    //         },
-    //         aim_trainer,
-    //     );
-    // } else {
-    //     println!("You have entered an invalid input. Please try again.");
-    //     main();
-    // }
 }
 
 async fn home(window: Window, mut gfx: Graphics, mut input: Input) -> Result<()> {
-    // while *CONTINUE.read().unwrap() {
-
-    // }
-    
-    // let mut running = true;
     while *CONTINUE.read().unwrap() {
         gfx.clear(Color::WHITE);
-        // gfx.present(&window)?;
         let ttf = VectorFont::load("../static/Exo2.ttf").await.unwrap();
-        // let w = &window;
         let mut font = ttf.to_renderer(&gfx, 32.0)?;
     
         font.draw_wrapping(
@@ -114,13 +75,6 @@ async fn home(window: Window, mut gfx: Graphics, mut input: Input) -> Result<()>
             }
         } 
     }
-    
-    // if *REACTION.read().unwrap() {
-    //     reaction_time(window, gfx, input).await?;
-    // } else if *AIM.read().unwrap() {
-    //     aim_trainer(window, gfx, input).await?;
-    // }
-
     Ok(())
 }
 
