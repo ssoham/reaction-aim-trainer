@@ -17,5 +17,8 @@ There are quite a few challenges that could pop up, such as being unable to prop
 
 ### Required Packages
 ```
-None!
+quicksilver = "0.4"
+rand = "0.8.3"
+lazy_static = "1.4.0"
+async-recursion = "0.2"
 ```
